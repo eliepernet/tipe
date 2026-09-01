@@ -3,10 +3,14 @@
 
 slides/*
 papers/*
+code_listing/*
 
+!code_listing/code_listing.pdf
 !slides/presentation.pdf
 !slides/figures/*
 !slides/beamerthememidcenturymodern.sty
+
+
 
 !papers/mcot.tex
 
