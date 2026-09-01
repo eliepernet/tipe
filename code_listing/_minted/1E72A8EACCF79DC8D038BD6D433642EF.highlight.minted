@@ -1,0 +1,113 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{sys}
+
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{matplotlib}\PYG{n+nn}{.}\PYG{n+nn}{pyplot}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{plt}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{numpy}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{np}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{pyvista}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{pv}
+
+\PYG{n}{sys}\PYG{o}{.}\PYG{n}{setrecursionlimit}\PYG{p}{(}\PYG{l+m+mi}{10000}\PYG{p}{)}
+
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{AneurysmData}\PYG{p}{:}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf+fm}{\PYGZus{}\PYGZus{}init\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{file}\PYG{p}{,} \PYG{n}{w}\PYG{p}{,} \PYG{n}{h}\PYG{p}{)}\PYG{p}{:}
+        \PYG{n}{mesh} \PYG{o}{=} \PYG{n}{pv}\PYG{o}{.}\PYG{n}{read}\PYG{p}{(}\PYG{n}{file}\PYG{p}{)}
+        \PYG{n}{slice\PYGZus{}plane} \PYG{o}{=} \PYG{n}{mesh}\PYG{o}{.}\PYG{n}{slice}\PYG{p}{(}\PYG{n}{normal}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{z}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}
+
+        \PYG{n}{edges} \PYG{o}{=} \PYG{n}{slice\PYGZus{}plane}\PYG{o}{.}\PYG{n}{extract\PYGZus{}feature\PYGZus{}edges}\PYG{p}{(}\PYG{n}{boundary\PYGZus{}edges}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+        \PYG{n}{contour\PYGZus{}points} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{n}{edges}\PYG{o}{.}\PYG{n}{points}\PYG{p}{)}
+        \PYG{n}{contour\PYGZus{}points} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{+} \PYG{l+m+mi}{10}\PYG{p}{]} \PYG{k}{for} \PYG{n}{cell} \PYG{o+ow}{in} \PYG{n}{contour\PYGZus{}points}\PYG{p}{]}\PYG{p}{)}
+
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{file} \PYG{o}{=} \PYG{n}{file}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{w} \PYG{o}{=} \PYG{n}{w}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{h} \PYG{o}{=} \PYG{n}{h}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h} \PYG{o}{=} \PYG{l+m+mi}{14} \PYG{o}{/} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{h}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w} \PYG{o}{=} \PYG{l+m+mi}{20} \PYG{o}{/} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{w}
+
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{p}{[}\PYG{l+m+mi}{0} \PYG{k}{for} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{w}\PYG{p}{)}\PYG{p}{]} \PYG{k}{for} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{h}\PYG{p}{)}\PYG{p}{]}\PYG{p}{)}
+
+        \PYG{k}{for} \PYG{n}{point} \PYG{o+ow}{in} \PYG{n}{contour\PYGZus{}points}\PYG{p}{:}
+            \PYG{n}{nearest\PYGZus{}cell\PYGZus{}x} \PYG{o}{=} \PYG{n+nb}{int}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{floor}\PYG{p}{(}\PYG{n}{point}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{/} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w}\PYG{p}{)}\PYG{p}{)}
+            \PYG{n}{nearest\PYGZus{}cell\PYGZus{}y} \PYG{o}{=} \PYG{n+nb}{int}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{floor}\PYG{p}{(}\PYG{n}{point}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{/} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h}\PYG{p}{)}\PYG{p}{)}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{nearest\PYGZus{}cell\PYGZus{}y}\PYG{p}{]}\PYG{p}{[}\PYG{n}{nearest\PYGZus{}cell\PYGZus{}x}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mi}{1}
+
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{\PYGZus{}\PYGZus{}filling}\PYG{p}{(}\PYG{n+nb}{int}\PYG{p}{(}\PYG{n}{h} \PYG{o}{/} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{,} \PYG{n+nb}{int}\PYG{p}{(}\PYG{n}{w} \PYG{o}{/} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{)}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{(}\PYG{n}{h} \PYG{o}{/} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{]}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{(}\PYG{n}{w} \PYG{o}{/} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mi}{2}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{\PYGZus{}\PYGZus{}filling\PYGZus{}outside}\PYG{p}{(}\PYG{p}{)}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{cells}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{n}{r} \PYG{o}{=} \PYG{p}{[}\PYG{p}{]}
+        \PYG{k}{for} \PYG{n}{i}\PYG{p}{,} \PYG{n}{row} \PYG{o+ow}{in} \PYG{n+nb}{enumerate}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{)}\PYG{p}{:}
+            \PYG{k}{for} \PYG{n}{j}\PYG{p}{,} \PYG{n}{cell} \PYG{o+ow}{in} \PYG{n+nb}{enumerate}\PYG{p}{(}\PYG{n}{row}\PYG{p}{)}\PYG{p}{:}
+                \PYG{n}{r}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{p}{[}\PYG{n}{j}\PYG{p}{,} \PYG{n}{i}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{]}\PYG{p}{)}
+        \PYG{k}{return} \PYG{n}{r}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{outside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{p}{[}\PYG{n}{cell} \PYG{k}{for} \PYG{n}{cell} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells} \PYG{k}{if} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{d\PYGZus{}outside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{p}{[}\PYG{n}{x} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.02} \PYG{o}{/} \PYG{n}{w}\PYG{p}{)}\PYG{p}{,} \PYG{n}{y} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.015} \PYG{o}{/} \PYG{n}{h}\PYG{p}{)}\PYG{p}{,} \PYG{n}{v}\PYG{p}{]} \PYG{k}{for} \PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{v} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells} \PYG{k}{if} \PYG{n}{v} \PYG{o}{==} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{inside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{n}{cell} \PYG{k}{for} \PYG{n}{cell} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells} \PYG{k}{if} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{d\PYGZus{}inside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{p}{[}\PYG{n}{x} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.02} \PYG{o}{/} \PYG{n}{w}\PYG{p}{)}\PYG{p}{,} \PYG{n}{y} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.015} \PYG{o}{/} \PYG{n}{h}\PYG{p}{)}\PYG{p}{,} \PYG{n}{v}\PYG{p}{]} \PYG{k}{for} \PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{v} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells} \PYG{k}{if} \PYG{n}{v} \PYG{o}{==} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{walls}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{n}{cell} \PYG{k}{for} \PYG{n}{cell} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells} \PYG{k}{if} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{n+nd}{@property}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{d\PYGZus{}walls}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{p}{[}\PYG{n}{x} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.02} \PYG{o}{/} \PYG{n}{w}\PYG{p}{)}\PYG{p}{,} \PYG{n}{y} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.015} \PYG{o}{/} \PYG{n}{h}\PYG{p}{)}\PYG{p}{,} \PYG{n}{v}\PYG{p}{]} \PYG{k}{for} \PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{v} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells} \PYG{k}{if} \PYG{n}{v} \PYG{o}{==} \PYG{l+m+mi}{3}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{is\PYGZus{}outline}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{]}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{1}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{is\PYGZus{}inside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{]}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{2}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{is\PYGZus{}true\PYGZus{}outside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{]}\PYG{p}{[}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{3}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{get\PYGZus{}coords}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{i}\PYG{p}{,} \PYG{n}{j}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{return} \PYG{n}{i} \PYG{o}{*} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w}\PYG{p}{,} \PYG{n}{j} \PYG{o}{*} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{\PYGZus{}\PYGZus{}filling}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{i}\PYG{p}{,} \PYG{n}{j}\PYG{p}{)}\PYG{p}{:}
+        \PYG{n}{neigbs} \PYG{o}{=} \PYG{p}{[}\PYG{p}{(}\PYG{n}{i} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{j}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{n}{i} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{j}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{n}{i}\PYG{p}{,} \PYG{n}{j} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{n}{i}\PYG{p}{,} \PYG{n}{j} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{]}
+        \PYG{k}{for} \PYG{n}{pixel} \PYG{o+ow}{in} \PYG{n}{neigbs}\PYG{p}{:}
+            \PYG{k}{if} \PYG{l+m+mi}{0} \PYG{o}{\PYGZlt{}}\PYG{o}{=} \PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{\PYGZlt{}} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{h} \PYG{o+ow}{and} \PYG{l+m+mi}{0} \PYG{o}{\PYGZlt{}}\PYG{o}{=} \PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{\PYGZlt{}} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{w}\PYG{p}{:}
+                \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]}\PYG{p}{[}\PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{p}{:}
+                    \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{]}\PYG{p}{[}\PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mi}{2}
+                    \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{\PYGZus{}\PYGZus{}filling}\PYG{p}{(}\PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{\PYGZus{}\PYGZus{}filling\PYGZus{}outside}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{for} \PYG{p}{(}\PYG{n}{i}\PYG{p}{,} \PYG{n}{j}\PYG{p}{,} \PYG{n}{\PYGZus{}}\PYG{p}{)} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{outside}\PYG{p}{:}
+            \PYG{n}{neigbs} \PYG{o}{=} \PYG{p}{[}\PYG{p}{(}\PYG{n}{i} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{j}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{n}{i} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{j}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{n}{i}\PYG{p}{,} \PYG{n}{j} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{n}{i}\PYG{p}{,} \PYG{n}{j} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{]}
+            \PYG{k}{for} \PYG{n}{pixel} \PYG{o+ow}{in} \PYG{n}{neigbs}\PYG{p}{:}
+                \PYG{k}{if} \PYG{l+m+mi}{0} \PYG{o}{\PYGZlt{}}\PYG{o}{=} \PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{\PYGZlt{}} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{h} \PYG{o+ow}{and} \PYG{l+m+mi}{0} \PYG{o}{\PYGZlt{}}\PYG{o}{=} \PYG{n}{pixel}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{\PYGZlt{}} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{w} \PYG{o+ow}{and} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{is\PYGZus{}inside}\PYG{p}{(}\PYG{n}{pixel}\PYG{p}{)}\PYG{p}{:}
+                    \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{grid}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mi}{3}
+                    \PYG{k}{break}
+
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{plot}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{show\PYGZus{}outline}\PYG{o}{=}\PYG{k+kc}{False}\PYG{p}{)}\PYG{p}{:}
+        \PYG{k}{for} \PYG{n}{cell} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{cells}\PYG{p}{:}
+            \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{is\PYGZus{}outline}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{)} \PYG{o+ow}{and} \PYG{n}{show\PYGZus{}outline}\PYG{p}{:}
+                \PYG{n}{plt}\PYG{o}{.}\PYG{n}{gca}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{add\PYGZus{}patch}\PYG{p}{(}
+                    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{Rectangle}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{get\PYGZus{}coords}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h}\PYG{p}{,} \PYG{n}{fill}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{,} \PYG{n}{color}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{b}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{)}
+            \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{is\PYGZus{}inside}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{)}\PYG{p}{:}
+                \PYG{n}{plt}\PYG{o}{.}\PYG{n}{gca}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{add\PYGZus{}patch}\PYG{p}{(}
+                    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{Rectangle}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{get\PYGZus{}coords}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h}\PYG{p}{,} \PYG{n}{fill}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{,} \PYG{n}{color}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{r}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{)}
+            \PYG{k}{elif} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{is\PYGZus{}true\PYGZus{}outside}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{)}\PYG{p}{:}
+                \PYG{n}{plt}\PYG{o}{.}\PYG{n}{gca}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{add\PYGZus{}patch}\PYG{p}{(}
+                    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{Rectangle}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{get\PYGZus{}coords}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h}\PYG{p}{,} \PYG{n}{fill}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{,} \PYG{n}{color}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{g}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}\PYG{p}{)}
+            \PYG{k}{else}\PYG{p}{:}
+                \PYG{n}{plt}\PYG{o}{.}\PYG{n}{gca}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{add\PYGZus{}patch}\PYG{p}{(}
+                    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{Rectangle}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{get\PYGZus{}coords}\PYG{p}{(}\PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{cell}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}w}\PYG{p}{,} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{s\PYGZus{}h}\PYG{p}{,} \PYG{n}{fill}\PYG{o}{=}\PYG{k+kc}{False}\PYG{p}{,} \PYG{n}{lw}\PYG{o}{=}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{)}
+        \PYG{n}{plt}\PYG{o}{.}\PYG{n}{title}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{Points du contour}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+        \PYG{n}{plt}\PYG{o}{.}\PYG{n}{axis}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{equal}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}
+        \PYG{n}{plt}\PYG{o}{.}\PYG{n}{show}\PYG{p}{(}\PYG{p}{)}
+\end{MintedVerbatim}

@@ -1,0 +1,181 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{json}
+
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{h5py}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{torch}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{pyvista}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{pv}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{numpy}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{np}
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{matplotlib}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{pyplot} \PYG{k}{as} \PYG{n}{plt}\PYG{p}{,} \PYG{n}{tri}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{matplotlib}\PYG{n+nn}{.}\PYG{n+nn}{colors}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{mcolors}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{kova\PYGZus{}solution\PYGZus{}np}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{nu}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{l} \PYG{o}{=} \PYG{l+m+mi}{1} \PYG{o}{/} \PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{nu}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{np}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{l+m+mi}{1} \PYG{o}{/} \PYG{p}{(}\PYG{l+m+mi}{4} \PYG{o}{*} \PYG{n}{nu}\PYG{o}{*}\PYG{o}{*}\PYG{l+m+mi}{2}\PYG{p}{)} \PYG{o}{+} \PYG{l+m+mi}{4} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{pi}\PYG{o}{*}\PYG{o}{*}\PYG{l+m+mi}{2}\PYG{p}{)}
+
+    \PYG{n}{u} \PYG{o}{=} \PYG{l+m+mi}{1} \PYG{o}{\PYGZhy{}} \PYG{n}{np}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{n}{l} \PYG{o}{*} \PYG{n}{x}\PYG{p}{)} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{cos}\PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{pi} \PYG{o}{*} \PYG{n}{y}\PYG{p}{)}
+    \PYG{n}{v} \PYG{o}{=} \PYG{p}{(}\PYG{n}{l} \PYG{o}{/} \PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{pi}\PYG{p}{)}\PYG{p}{)} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{n}{l} \PYG{o}{*} \PYG{n}{x}\PYG{p}{)} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{sin}\PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{pi} \PYG{o}{*} \PYG{n}{y}\PYG{p}{)}
+    \PYG{n}{p} \PYG{o}{=} \PYG{l+m+mf}{0.5} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mi}{1} \PYG{o}{\PYGZhy{}} \PYG{n}{np}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{l} \PYG{o}{*} \PYG{n}{x}\PYG{p}{)}\PYG{p}{)}
+
+    \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{stack}\PYG{p}{(}\PYG{p}{[}\PYG{n}{u}\PYG{p}{,} \PYG{n}{v}\PYG{p}{,} \PYG{n}{p}\PYG{p}{]}\PYG{p}{,} \PYG{n}{axis}\PYG{o}{=}\PYG{l+m+mi}{1}\PYG{p}{)}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{kova\PYGZus{}solution}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{nu}\PYG{p}{)} \PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{Tensor}\PYG{p}{:}
+    \PYG{n}{result\PYGZus{}np} \PYG{o}{=} \PYG{n}{kova\PYGZus{}solution\PYGZus{}np}\PYG{p}{(}\PYG{n}{x}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{cpu}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{numpy}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{y}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{cpu}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{numpy}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{nu}\PYG{p}{)}
+
+    \PYG{k}{return} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{tensor}\PYG{p}{(}\PYG{n}{result\PYGZus{}np}\PYG{p}{,} \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{x}\PYG{o}{.}\PYG{n}{dtype}\PYG{p}{,} \PYG{n}{device}\PYG{o}{=}\PYG{n}{x}\PYG{o}{.}\PYG{n}{device}\PYG{p}{)}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{load\PYGZus{}losses}\PYG{p}{(}\PYG{n}{filename}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{losses} \PYG{o}{=} \PYG{p}{[}\PYG{p}{]}
+
+    \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{filename}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{r}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{losses} \PYG{o}{=} \PYG{p}{[}\PYG{n}{i} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{json}\PYG{o}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)} \PYG{k}{if} \PYG{n}{np}\PYG{o}{.}\PYG{n}{shape}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)}\PYG{p}{]}
+
+    \PYG{k}{return} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{n}{losses}\PYG{p}{)}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{ns\PYGZus{}residuals}\PYG{p}{(}\PYG{n}{coords}\PYG{p}{,} \PYG{n}{u}\PYG{p}{,} \PYG{n}{v}\PYG{p}{,} \PYG{n}{p}\PYG{p}{,} \PYG{n}{nu}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{grad\PYGZus{}u} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{u}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{u}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{du\PYGZus{}x} \PYG{o}{=} \PYG{n}{grad\PYGZus{}u}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{du\PYGZus{}y} \PYG{o}{=} \PYG{n}{grad\PYGZus{}u}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{grad\PYGZus{}v} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{v}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{v}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{dv\PYGZus{}x} \PYG{o}{=} \PYG{n}{grad\PYGZus{}v}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{dv\PYGZus{}y} \PYG{o}{=} \PYG{n}{grad\PYGZus{}v}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{grad\PYGZus{}p} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{p}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{p}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{dp\PYGZus{}x} \PYG{o}{=} \PYG{n}{grad\PYGZus{}p}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{dp\PYGZus{}y} \PYG{o}{=} \PYG{n}{grad\PYGZus{}p}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{du\PYGZus{}xx} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{du\PYGZus{}x}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{du\PYGZus{}x}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{du\PYGZus{}yy} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{du\PYGZus{}y}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{du\PYGZus{}y}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{dv\PYGZus{}xx} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{dv\PYGZus{}x}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{dv\PYGZus{}x}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{dv\PYGZus{}yy} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{autograd}\PYG{o}{.}\PYG{n}{grad}\PYG{p}{(}\PYG{n}{dv\PYGZus{}y}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones\PYGZus{}like}\PYG{p}{(}\PYG{n}{dv\PYGZus{}y}\PYG{p}{)}\PYG{p}{,} \PYG{n}{create\PYGZus{}graph}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{ns\PYGZus{}x} \PYG{o}{=} \PYG{n}{u} \PYG{o}{*} \PYG{n}{du\PYGZus{}x} \PYG{o}{+} \PYG{n}{v} \PYG{o}{*} \PYG{n}{du\PYGZus{}y} \PYG{o}{+} \PYG{n}{dp\PYGZus{}x} \PYG{o}{\PYGZhy{}} \PYG{n}{nu} \PYG{o}{*} \PYG{p}{(}\PYG{n}{du\PYGZus{}xx} \PYG{o}{+} \PYG{n}{du\PYGZus{}yy}\PYG{p}{)}
+    \PYG{n}{ns\PYGZus{}y} \PYG{o}{=} \PYG{n}{u} \PYG{o}{*} \PYG{n}{dv\PYGZus{}x} \PYG{o}{+} \PYG{n}{v} \PYG{o}{*} \PYG{n}{dv\PYGZus{}y} \PYG{o}{+} \PYG{n}{dp\PYGZus{}y} \PYG{o}{\PYGZhy{}} \PYG{n}{nu} \PYG{o}{*} \PYG{p}{(}\PYG{n}{dv\PYGZus{}xx} \PYG{o}{+} \PYG{n}{dv\PYGZus{}yy}\PYG{p}{)}
+    \PYG{n}{continuity} \PYG{o}{=} \PYG{n}{du\PYGZus{}x} \PYG{o}{+} \PYG{n}{dv\PYGZus{}y}
+
+    \PYG{k}{return} \PYG{n}{ns\PYGZus{}x}\PYG{p}{,} \PYG{n}{ns\PYGZus{}y}\PYG{p}{,} \PYG{n}{continuity}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{extract\PYGZus{}ds\PYGZus{}values}\PYG{p}{(}\PYG{n}{file\PYGZus{}name}\PYG{p}{,} \PYG{n}{T}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{with} \PYG{n}{h5py}\PYG{o}{.}\PYG{n}{File}\PYG{p}{(}\PYG{n}{file\PYGZus{}name}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{r}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{coords} \PYG{o}{=} \PYG{n}{f}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{data0}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{]}
+        \PYG{n}{connectivity} \PYG{o}{=} \PYG{n}{f}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{data1}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{]}
+        \PYG{n}{vitesses} \PYG{o}{=} \PYG{n}{f}\PYG{p}{[}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{data}\PYG{l+s+si}{\PYGZob{}}\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{+w}{ }\PYG{o}{*}\PYG{+w}{ }\PYG{n}{T}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{]}
+
+    \PYG{n}{cells} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{hstack}\PYG{p}{(}\PYG{p}{[}\PYG{n}{np}\PYG{o}{.}\PYG{n}{full}\PYG{p}{(}\PYG{p}{(}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{connectivity}\PYG{p}{)}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{,} \PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{,} \PYG{n}{connectivity}\PYG{p}{]}\PYG{p}{)}\PYG{o}{.}\PYG{n}{ravel}\PYG{p}{(}\PYG{p}{)}
+    \PYG{n}{cell\PYGZus{}types} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{full}\PYG{p}{(}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{connectivity}\PYG{p}{)}\PYG{p}{,} \PYG{n}{pv}\PYG{o}{.}\PYG{n}{CellType}\PYG{o}{.}\PYG{n}{TETRA}\PYG{p}{)}
+    \PYG{n}{mesh} \PYG{o}{=} \PYG{n}{pv}\PYG{o}{.}\PYG{n}{UnstructuredGrid}\PYG{p}{(}\PYG{n}{cells}\PYG{p}{,} \PYG{n}{cell\PYGZus{}types}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{)}
+    \PYG{n}{mesh}\PYG{o}{.}\PYG{n}{point\PYGZus{}data}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{Vitesse}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]} \PYG{o}{=} \PYG{n}{vitesses}
+
+    \PYG{n}{slice\PYGZus{}plane} \PYG{o}{=} \PYG{n}{mesh}\PYG{o}{.}\PYG{n}{slice}\PYG{p}{(}\PYG{n}{normal}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{z}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}
+
+    \PYG{n}{points} \PYG{o}{=} \PYG{n}{slice\PYGZus{}plane}\PYG{o}{.}\PYG{n}{points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{p}{:}\PYG{l+m+mi}{2}\PYG{p}{]}
+    \PYG{n}{U} \PYG{o}{=} \PYG{n}{slice\PYGZus{}plane}\PYG{o}{.}\PYG{n}{point\PYGZus{}data}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{Vitesse}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}
+    \PYG{n}{u} \PYG{o}{=} \PYG{n}{U}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{v} \PYG{o}{=} \PYG{n}{U}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{uv\PYGZus{}list} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{stack}\PYG{p}{(}\PYG{p}{[}\PYG{n}{u}\PYG{p}{,} \PYG{n}{v}\PYG{p}{]}\PYG{p}{,} \PYG{n}{axis}\PYG{o}{=}\PYG{l+m+mi}{1}\PYG{p}{)}
+    \PYG{n}{x} \PYG{o}{=} \PYG{n}{points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}
+    \PYG{n}{y} \PYG{o}{=} \PYG{n}{points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+    \PYG{n}{x} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{n+nb}{list}\PYG{p}{(}\PYG{n+nb}{map}\PYG{p}{(}\PYG{k}{lambda} \PYG{n}{x\PYGZus{}c}\PYG{p}{:} \PYG{n}{x\PYGZus{}c} \PYG{o}{+} \PYG{l+m+mi}{10}\PYG{p}{,} \PYG{n}{x}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{uv\PYGZus{}list}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{extract\PYGZus{}ds\PYGZus{}outside\PYGZus{}values}\PYG{p}{(}\PYG{n}{file\PYGZus{}name}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{with} \PYG{n}{h5py}\PYG{o}{.}\PYG{n}{File}\PYG{p}{(}\PYG{n}{file\PYGZus{}name}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{r}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{coords} \PYG{o}{=} \PYG{n}{f}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{data0}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{]}
+        \PYG{n}{connectivity} \PYG{o}{=} \PYG{n}{f}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{data1}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{[}\PYG{p}{:}\PYG{p}{]}
+
+    \PYG{n}{cells} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{hstack}\PYG{p}{(}\PYG{p}{[}\PYG{n}{np}\PYG{o}{.}\PYG{n}{full}\PYG{p}{(}\PYG{p}{(}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{connectivity}\PYG{p}{)}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{,} \PYG{l+m+mi}{4}\PYG{p}{)}\PYG{p}{,} \PYG{n}{connectivity}\PYG{p}{]}\PYG{p}{)}\PYG{o}{.}\PYG{n}{ravel}\PYG{p}{(}\PYG{p}{)}
+    \PYG{n}{cell\PYGZus{}types} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{full}\PYG{p}{(}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{connectivity}\PYG{p}{)}\PYG{p}{,} \PYG{n}{pv}\PYG{o}{.}\PYG{n}{CellType}\PYG{o}{.}\PYG{n}{TETRA}\PYG{p}{)}
+    \PYG{n}{mesh} \PYG{o}{=} \PYG{n}{pv}\PYG{o}{.}\PYG{n}{UnstructuredGrid}\PYG{p}{(}\PYG{n}{cells}\PYG{p}{,} \PYG{n}{cell\PYGZus{}types}\PYG{p}{,} \PYG{n}{coords}\PYG{p}{)}
+
+    \PYG{n}{slice\PYGZus{}plane} \PYG{o}{=} \PYG{n}{mesh}\PYG{o}{.}\PYG{n}{slice}\PYG{p}{(}\PYG{n}{normal}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{z}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}
+    \PYG{n}{edges} \PYG{o}{=} \PYG{n}{slice\PYGZus{}plane}\PYG{o}{.}\PYG{n}{extract\PYGZus{}feature\PYGZus{}edges}\PYG{p}{(}\PYG{n}{boundary\PYGZus{}edges}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{,}
+                                              \PYG{n}{non\PYGZus{}manifold\PYGZus{}edges}\PYG{o}{=}\PYG{k+kc}{False}\PYG{p}{,}
+                                              \PYG{n}{feature\PYGZus{}edges}\PYG{o}{=}\PYG{k+kc}{False}\PYG{p}{,}
+                                              \PYG{n}{manifold\PYGZus{}edges}\PYG{o}{=}\PYG{k+kc}{False}\PYG{p}{)}
+    \PYG{n}{contour\PYGZus{}points} \PYG{o}{=} \PYG{n}{edges}\PYG{o}{.}\PYG{n}{points}
+    \PYG{n}{x} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{n+nb}{list}\PYG{p}{(}\PYG{n+nb}{map}\PYG{p}{(}\PYG{k}{lambda} \PYG{n}{x\PYGZus{}c}\PYG{p}{:} \PYG{n}{x\PYGZus{}c} \PYG{o}{+} \PYG{l+m+mi}{10}\PYG{p}{,} \PYG{n}{contour\PYGZus{}points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{x}\PYG{p}{,} \PYG{n}{contour\PYGZus{}points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{plot\PYGZus{}field}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{z}\PYG{p}{,} \PYG{n}{plot\PYGZus{}title}\PYG{p}{,} \PYG{n}{z\PYGZus{}label}\PYG{p}{,} \PYG{n}{show\PYGZus{}norm}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{triang} \PYG{o}{=} \PYG{n}{tri}\PYG{o}{.}\PYG{n}{Triangulation}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{)}
+    \PYG{n}{triangles} \PYG{o}{=} \PYG{n}{triang}\PYG{o}{.}\PYG{n}{triangles}
+
+    \PYG{n}{x\PYGZus{}tri} \PYG{o}{=} \PYG{n}{x}\PYG{p}{[}\PYG{n}{triangles}\PYG{p}{]}
+    \PYG{n}{y\PYGZus{}tri} \PYG{o}{=} \PYG{n}{y}\PYG{p}{[}\PYG{n}{triangles}\PYG{p}{]}
+
+    \PYG{n}{a} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{p}{(}\PYG{n}{x\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{x\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2} \PYG{o}{+} \PYG{p}{(}\PYG{n}{y\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{y\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2}\PYG{p}{)}
+    \PYG{n}{b} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{p}{(}\PYG{n}{x\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{x\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2} \PYG{o}{+} \PYG{p}{(}\PYG{n}{y\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{y\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2}\PYG{p}{)}
+    \PYG{n}{c} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{p}{(}\PYG{n}{x\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{x\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2} \PYG{o}{+} \PYG{p}{(}\PYG{n}{y\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{y\PYGZus{}tri}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2}\PYG{p}{)}
+
+    \PYG{n}{max\PYGZus{}edge} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{stack}\PYG{p}{(}\PYG{p}{[}\PYG{n}{a}\PYG{p}{,} \PYG{n}{b}\PYG{p}{,} \PYG{n}{c}\PYG{p}{]}\PYG{p}{,} \PYG{n}{axis}\PYG{o}{=}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{,} \PYG{n}{axis}\PYG{o}{=}\PYG{l+m+mi}{1}\PYG{p}{)}
+
+    \PYG{n}{threshold} \PYG{o}{=} \PYG{l+m+mf}{0.05}
+    \PYG{n}{triang}\PYG{o}{.}\PYG{n}{set\PYGZus{}mask}\PYG{p}{(}\PYG{n}{max\PYGZus{}edge} \PYG{o}{\PYGZgt{}} \PYG{n}{threshold}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}\PYGZhy{} Plot \PYGZhy{}\PYGZhy{}\PYGZhy{}}
+    \PYG{n}{fig}\PYG{p}{,} \PYG{n}{ax} \PYG{o}{=} \PYG{n}{plt}\PYG{o}{.}\PYG{n}{subplots}\PYG{p}{(}\PYG{p}{)}
+    \PYG{k}{if} \PYG{n}{show\PYGZus{}norm}\PYG{p}{:}
+        \PYG{n}{norm} \PYG{o}{=} \PYG{n}{mcolors}\PYG{o}{.}\PYG{n}{TwoSlopeNorm}\PYG{p}{(}\PYG{n}{vmin}\PYG{o}{=}\PYG{n}{z}\PYG{o}{.}\PYG{n}{min}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{vcenter}\PYG{o}{=}\PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n}{vmax}\PYG{o}{=}\PYG{n}{z}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+        \PYG{n}{tcf} \PYG{o}{=} \PYG{n}{ax}\PYG{o}{.}\PYG{n}{tripcolor}\PYG{p}{(}\PYG{n}{triang}\PYG{p}{,} \PYG{n}{z}\PYG{p}{,} \PYG{n}{cmap}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{RdBu\PYGZus{}r}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{,} \PYG{n}{shading}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{gouraud}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{,} \PYG{n}{norm}\PYG{o}{=}\PYG{n}{norm}\PYG{p}{)}
+    \PYG{k}{else}\PYG{p}{:}
+        \PYG{n}{tcf} \PYG{o}{=} \PYG{n}{ax}\PYG{o}{.}\PYG{n}{tripcolor}\PYG{p}{(}\PYG{n}{triang}\PYG{p}{,} \PYG{n}{z}\PYG{p}{,} \PYG{n}{cmap}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{viridis}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{,} \PYG{n}{shading}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{gouraud}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}
+    \PYG{n}{ax}\PYG{o}{.}\PYG{n}{set\PYGZus{}aspect}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{auto}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{)}
+    \PYG{n}{ax}\PYG{o}{.}\PYG{n}{set\PYGZus{}xlim}\PYG{p}{(}\PYG{n}{x}\PYG{o}{.}\PYG{n}{min}\PYG{p}{(}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{0.05}\PYG{p}{,} \PYG{n}{x}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{p}{)} \PYG{o}{+} \PYG{l+m+mf}{0.05}\PYG{p}{)}
+    \PYG{n}{ax}\PYG{o}{.}\PYG{n}{set\PYGZus{}ylim}\PYG{p}{(}\PYG{n}{y}\PYG{o}{.}\PYG{n}{min}\PYG{p}{(}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{0.05}\PYG{p}{,} \PYG{n}{y}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{p}{)} \PYG{o}{+} \PYG{l+m+mf}{0.05}\PYG{p}{)}
+    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{colorbar}\PYG{p}{(}\PYG{n}{tcf}\PYG{p}{,} \PYG{n}{ax}\PYG{o}{=}\PYG{n}{ax}\PYG{p}{,} \PYG{n}{label}\PYG{o}{=}\PYG{n}{z\PYGZus{}label}\PYG{p}{)}
+    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{title}\PYG{p}{(}\PYG{n}{plot\PYGZus{}title}\PYG{p}{)}
+    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{tight\PYGZus{}layout}\PYG{p}{(}\PYG{p}{)}
+    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{xlabel}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{x}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{ylabel}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{y}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    \PYG{n}{plt}\PYG{o}{.}\PYG{n}{show}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{kova\PYGZus{}data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{outside\PYGZus{}points} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{Tensor}\PYG{p}{(}
+        \PYG{p}{[}\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{n}{i}\PYG{p}{]} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{np}\PYG{o}{.}\PYG{n}{linspace}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mf}{1.5}\PYG{p}{,} \PYG{l+m+mi}{25}\PYG{p}{)}\PYG{p}{]} \PYG{o}{+}
+        \PYG{p}{[}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{i}\PYG{p}{]} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{np}\PYG{o}{.}\PYG{n}{linspace}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mf}{1.5}\PYG{p}{,} \PYG{l+m+mi}{25}\PYG{p}{)}\PYG{p}{]} \PYG{o}{+}
+        \PYG{p}{[}\PYG{p}{[}\PYG{n}{i}\PYG{p}{,} \PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{]} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{np}\PYG{o}{.}\PYG{n}{linspace}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{,}\PYG{l+m+mi}{25}\PYG{p}{)}\PYG{p}{]} \PYG{o}{+}
+        \PYG{p}{[}\PYG{p}{[}\PYG{n}{i}\PYG{p}{,} \PYG{l+m+mf}{1.5}\PYG{p}{]} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{np}\PYG{o}{.}\PYG{n}{linspace}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{l+m+mi}{25}\PYG{p}{)}\PYG{p}{]}\PYG{p}{)}\PYG{o}{.}\PYG{n}{double}\PYG{p}{(}\PYG{p}{)}
+    \PYG{n}{inside\PYGZus{}points} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{tensor}\PYG{p}{(}
+        \PYG{n}{np}\PYG{o}{.}\PYG{n}{column\PYGZus{}stack}\PYG{p}{(}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{random}\PYG{o}{.}\PYG{n}{uniform}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mf}{1.0}\PYG{p}{,} \PYG{l+m+mi}{2000}\PYG{p}{)}\PYG{p}{,} \PYG{n}{np}\PYG{o}{.}\PYG{n}{random}\PYG{o}{.}\PYG{n}{uniform}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mf}{1.5}\PYG{p}{,} \PYG{l+m+mi}{2000}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}
+    \PYG{p}{)}\PYG{o}{.}\PYG{n}{double}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{requires\PYGZus{}grad\PYGZus{}}\PYG{p}{(}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{k}{return} \PYG{n}{outside\PYGZus{}points}\PYG{p}{,} \PYG{n}{inside\PYGZus{}points}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{u\PYGZus{}func}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{return} \PYG{l+m+mi}{1} \PYG{o}{\PYGZhy{}} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{n}{l} \PYG{o}{*} \PYG{n}{x}\PYG{p}{)} \PYG{o}{*} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{cos}\PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{pi} \PYG{o}{*} \PYG{n}{y}\PYG{p}{)}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{v\PYGZus{}func}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{return} \PYG{p}{(}\PYG{n}{l} \PYG{o}{/} \PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{pi}\PYG{p}{)}\PYG{p}{)} \PYG{o}{*} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{n}{l} \PYG{o}{*} \PYG{n}{x}\PYG{p}{)} \PYG{o}{*} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{sin}\PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{pi} \PYG{o}{*} \PYG{n}{y}\PYG{p}{)}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{p\PYGZus{}func}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{return} \PYG{l+m+mi}{1} \PYG{o}{/} \PYG{l+m+mi}{2} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mi}{1} \PYG{o}{\PYGZhy{}} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{l+m+mi}{2} \PYG{o}{*} \PYG{n}{l} \PYG{o}{*} \PYG{n}{x}\PYG{p}{)}\PYG{p}{)}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{parabolic\PYGZus{}inlet}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,} \PYG{n}{V\PYGZus{}max}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{x\PYGZus{}center} \PYG{o}{=} \PYG{p}{(}\PYG{n}{x}\PYG{o}{.}\PYG{n}{min}\PYG{p}{(}\PYG{p}{)} \PYG{o}{+} \PYG{n}{x}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)} \PYG{o}{/} \PYG{l+m+mi}{2}
+    \PYG{n}{R} \PYG{o}{=} \PYG{p}{(}\PYG{n}{x}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{x}\PYG{o}{.}\PYG{n}{min}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)} \PYG{o}{/} \PYG{l+m+mi}{2}
+
+    \PYG{k}{return} \PYG{n}{V\PYGZus{}max} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mi}{1} \PYG{o}{\PYGZhy{}} \PYG{p}{(}\PYG{p}{(}\PYG{n}{x} \PYG{o}{\PYGZhy{}} \PYG{n}{x\PYGZus{}center}\PYG{p}{)} \PYG{o}{/} \PYG{n}{R}\PYG{p}{)} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2}\PYG{p}{)}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{increase\PYGZus{}points\PYGZus{}number}\PYG{p}{(}\PYG{n}{points}\PYG{p}{,} \PYG{n}{n\PYGZus{}variations}\PYG{o}{=}\PYG{l+m+mi}{8}\PYG{p}{,} \PYG{n}{step\PYGZus{}size}\PYG{o}{=}\PYG{l+m+mf}{0.05}\PYG{p}{,} \PYG{n}{noise\PYGZus{}std}\PYG{o}{=}\PYG{l+m+mf}{0.02}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{augmented} \PYG{o}{=} \PYG{p}{[}\PYG{n}{points}\PYG{p}{]}
+
+    \PYG{k}{for} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n}{n\PYGZus{}variations}\PYG{p}{)}\PYG{p}{:}
+        \PYG{c+c1}{\PYGZsh{} Pas aléatoire dans [\PYGZhy{}step\PYGZus{}size, step\PYGZus{}size]}
+        \PYG{n}{random\PYGZus{}step} \PYG{o}{=} \PYG{p}{(}\PYG{n}{torch}\PYG{o}{.}\PYG{n}{rand\PYGZus{}like}\PYG{p}{(}\PYG{n}{points}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{2} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{)} \PYG{o}{*} \PYG{n}{step\PYGZus{}size}
+        \PYG{c+c1}{\PYGZsh{} Ajouter un peu de bruit}
+        \PYG{n}{noise} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{randn\PYGZus{}like}\PYG{p}{(}\PYG{n}{points}\PYG{p}{)} \PYG{o}{*} \PYG{n}{noise\PYGZus{}std}
+        \PYG{c+c1}{\PYGZsh{} Nouveaux points}
+        \PYG{n}{new\PYGZus{}points} \PYG{o}{=} \PYG{n}{points} \PYG{o}{+} \PYG{n}{random\PYGZus{}step} \PYG{o}{+} \PYG{n}{noise}
+        \PYG{n}{augmented}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{new\PYGZus{}points}\PYG{p}{)}
+
+    \PYG{k}{return} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{cat}\PYG{p}{(}\PYG{n}{augmented}\PYG{p}{,} \PYG{n}{dim}\PYG{o}{=}\PYG{l+m+mi}{0}\PYG{p}{)}
+\end{MintedVerbatim}

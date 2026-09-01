@@ -1,0 +1,17 @@
+.venv
+.idea
+
+slides/*
+papers/*
+
+!slides/presentation.pdf
+!slides/figures/*
+!slides/beamerthememidcenturymodern.sty
+
+!papers/mcot.tex
+
+AnXplore-main
+coarse_dataset
+data
+recherches_tipe
+.DS_Store

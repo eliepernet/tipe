@@ -1,0 +1,175 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{sys}
+
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{numpy}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{np}
+
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{json}
+
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{torch}
+\PYG{k+kn}{import}\PYG{+w}{ }\PYG{n+nn}{torch}\PYG{n+nn}{.}\PYG{n+nn}{nn}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{n+nn}{nn}
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{torch}\PYG{n+nn}{.}\PYG{n+nn}{optim}\PYG{n+nn}{.}\PYG{n+nn}{lr\PYGZus{}scheduler}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{StepLR}
+
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{src}\PYG{n+nn}{.}\PYG{n+nn}{data}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{AneurysmData}
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{src}\PYG{n+nn}{.}\PYG{n+nn}{utils}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{ns\PYGZus{}residuals}
+
+\PYG{n}{sys}\PYG{o}{.}\PYG{n}{setrecursionlimit}\PYG{p}{(}\PYG{l+m+mi}{10000}\PYG{p}{)}
+
+\PYG{n}{w}\PYG{p}{,} \PYG{n}{h} \PYG{o}{=} \PYG{l+m+mi}{150}\PYG{p}{,} \PYG{l+m+mi}{90}
+\PYG{n}{data} \PYG{o}{=} \PYG{n}{AneurysmData}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{../data/Solid\PYGZus{}77.vtk}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{w}\PYG{p}{,} \PYG{n}{h}\PYG{p}{)}
+
+\PYG{n}{rho} \PYG{o}{=} \PYG{l+m+mf}{1055.0}
+\PYG{n}{mu} \PYG{o}{=} \PYG{l+m+mf}{0.0035}
+\PYG{n}{nu} \PYG{o}{=} \PYG{n}{mu} \PYG{o}{/} \PYG{n}{rho}
+
+\PYG{n}{V\PYGZus{}max} \PYG{o}{=} \PYG{l+m+mf}{1.114}
+
+\PYG{n}{L\PYGZus{}ref} \PYG{o}{=} \PYG{l+m+mf}{0.02}
+\PYG{n}{P\PYGZus{}ref} \PYG{o}{=} \PYG{n}{rho} \PYG{o}{*} \PYG{n}{V\PYGZus{}max} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2}  \PYG{c+c1}{\PYGZsh{} Pa}
+
+\PYG{n}{Re} \PYG{o}{=} \PYG{n}{V\PYGZus{}max} \PYG{o}{*} \PYG{l+m+mf}{0.004} \PYG{o}{/} \PYG{n}{nu}
+
+\PYG{n}{nu} \PYG{o}{=} \PYG{l+m+mi}{1} \PYG{o}{/} \PYG{n}{Re}
+
+\PYG{n}{inlet\PYGZus{}radius} \PYG{o}{=} \PYG{l+m+mf}{0.09}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{increase\PYGZus{}points\PYGZus{}number}\PYG{p}{(}\PYG{n}{points}\PYG{p}{,} \PYG{n}{n\PYGZus{}variations}\PYG{o}{=}\PYG{l+m+mi}{8}\PYG{p}{,} \PYG{n}{step\PYGZus{}size}\PYG{o}{=}\PYG{l+m+mf}{0.05}\PYG{p}{,} \PYG{n}{noise\PYGZus{}std}\PYG{o}{=}\PYG{l+m+mf}{0.02}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{augmented} \PYG{o}{=} \PYG{p}{[}\PYG{n}{points}\PYG{p}{]}
+
+    \PYG{k}{for} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n}{n\PYGZus{}variations}\PYG{p}{)}\PYG{p}{:}
+        \PYG{c+c1}{\PYGZsh{} Pas aléatoire dans [\PYGZhy{}step\PYGZus{}size, step\PYGZus{}size]}
+        \PYG{n}{random\PYGZus{}step} \PYG{o}{=} \PYG{p}{(}\PYG{n}{torch}\PYG{o}{.}\PYG{n}{rand\PYGZus{}like}\PYG{p}{(}\PYG{n}{points}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{2} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{)} \PYG{o}{*} \PYG{n}{step\PYGZus{}size}
+        \PYG{c+c1}{\PYGZsh{} Ajouter un peu de bruit}
+        \PYG{n}{noise} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{randn\PYGZus{}like}\PYG{p}{(}\PYG{n}{points}\PYG{p}{)} \PYG{o}{*} \PYG{n}{noise\PYGZus{}std}
+        \PYG{c+c1}{\PYGZsh{} Nouveaux points}
+        \PYG{n}{new\PYGZus{}points} \PYG{o}{=} \PYG{n}{points} \PYG{o}{+} \PYG{n}{random\PYGZus{}step} \PYG{o}{+} \PYG{n}{noise}
+        \PYG{n}{augmented}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{new\PYGZus{}points}\PYG{p}{)}
+
+    \PYG{k}{return} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{cat}\PYG{p}{(}\PYG{n}{augmented}\PYG{p}{,} \PYG{n}{dim}\PYG{o}{=}\PYG{l+m+mi}{0}\PYG{p}{)}
+
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{compute\PYGZus{}inlet\PYGZus{}velocity}\PYG{p}{(}\PYG{n}{points}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{dx} \PYG{o}{=} \PYG{n}{points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{0.19}
+    \PYG{n}{dy} \PYG{o}{=} \PYG{n}{points}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}
+    \PYG{n}{distance\PYGZus{}sq} \PYG{o}{=} \PYG{n}{dx} \PYG{o}{*} \PYG{n}{dx} \PYG{o}{+} \PYG{n}{dy} \PYG{o}{*} \PYG{n}{dy}
+
+    \PYG{n}{velocity} \PYG{o}{=} \PYG{p}{(}\PYG{l+m+mi}{1} \PYG{o}{\PYGZhy{}} \PYG{n}{distance\PYGZus{}sq} \PYG{o}{/} \PYG{p}{(}\PYG{n}{inlet\PYGZus{}radius} \PYG{o}{*}\PYG{o}{*} \PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{)}
+
+    \PYG{k}{return} \PYG{n}{velocity}
+
+
+\PYG{n}{inside\PYGZus{}points} \PYG{o}{=} \PYG{n+nb}{list}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{float64}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{column\PYGZus{}stack}\PYG{p}{(}\PYG{p}{(}\PYG{n}{data}\PYG{o}{.}\PYG{n}{d\PYGZus{}inside}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{/} \PYG{n}{L\PYGZus{}ref}\PYG{p}{,} \PYG{n}{data}\PYG{o}{.}\PYG{n}{d\PYGZus{}inside}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{/} \PYG{n}{L\PYGZus{}ref}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}
+\PYG{n}{inside\PYGZus{}points} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{tensor}\PYG{p}{(}\PYG{n}{inside\PYGZus{}points}\PYG{p}{)}\PYG{o}{.}\PYG{n}{double}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{n}{inside\PYGZus{}points} \PYG{o}{=} \PYG{n}{increase\PYGZus{}points\PYGZus{}number}\PYG{p}{(}\PYG{n}{inside\PYGZus{}points}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{)}
+\PYG{n}{inside\PYGZus{}points} \PYG{o}{=} \PYG{n}{inside\PYGZus{}points}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{requires\PYGZus{}grad\PYGZus{}}\PYG{p}{(}\PYG{k+kc}{True}\PYG{p}{)}
+
+
+\PYG{n}{inlet\PYGZus{}points} \PYG{o}{=} \PYG{n}{filter\PYGZus{}inlet\PYGZus{}points}\PYG{p}{(}\PYG{n}{inside\PYGZus{}points}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{n}{inlet\PYGZus{}points} \PYG{o}{=} \PYG{n}{increase\PYGZus{}points\PYGZus{}number}\PYG{p}{(}\PYG{n}{inlet\PYGZus{}points}\PYG{p}{,} \PYG{l+m+mi}{8}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{)}
+\PYG{n}{inlet\PYGZus{}points} \PYG{o}{=} \PYG{n}{inlet\PYGZus{}points}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}\PYG{o}{.}\PYG{n}{requires\PYGZus{}grad\PYGZus{}}\PYG{p}{(}\PYG{k+kc}{True}\PYG{p}{)}
+
+\PYG{n}{outside\PYGZus{}points} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{tensor}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{float64}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{column\PYGZus{}stack}\PYG{p}{(}\PYG{p}{(}\PYG{n}{data}\PYG{o}{.}\PYG{n}{d\PYGZus{}walls}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{/} \PYG{n}{L\PYGZus{}ref}\PYG{p}{,} \PYG{n}{data}\PYG{o}{.}\PYG{n}{d\PYGZus{}walls}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{/} \PYG{n}{L\PYGZus{}ref}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{o}{.}\PYG{n}{double}\PYG{p}{(}\PYG{p}{)}
+\PYG{n}{outlet\PYGZus{}points} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{tensor}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{float64}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{array}\PYG{p}{(}\PYG{p}{[}\PYG{p}{[}\PYG{n}{x} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.02} \PYG{o}{/} \PYG{n}{w}\PYG{p}{)} \PYG{o}{/} \PYG{n}{L\PYGZus{}ref}\PYG{p}{,} \PYG{n}{y} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mf}{0.015} \PYG{o}{/} \PYG{n}{h}\PYG{p}{)} \PYG{o}{/} \PYG{n}{L\PYGZus{}ref}\PYG{p}{]} \PYG{k}{for} \PYG{n}{x}\PYG{p}{,} \PYG{n}{y}\PYG{p}{,} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in}
+                                                  \PYG{n}{data}\PYG{o}{.}\PYG{n}{inside}\PYG{p}{[}\PYG{p}{(}\PYG{n}{data}\PYG{o}{.}\PYG{n}{inside}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{p}{)} \PYG{o}{\PYGZam{}} \PYG{p}{(}\PYG{n}{data}\PYG{o}{.}\PYG{n}{inside}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{\PYGZgt{}} \PYG{l+m+mi}{50}\PYG{p}{)}\PYG{p}{]}\PYG{p}{]}\PYG{p}{)}\PYG{p}{)}\PYG{p}{)}\PYG{o}{.}\PYG{n}{double}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{n}{inlet\PYGZus{}labels} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{column\PYGZus{}stack}\PYG{p}{(}\PYG{p}{(}
+    \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros}\PYG{p}{(}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{inlet\PYGZus{}points}\PYG{p}{)}\PYG{p}{)}\PYG{p}{,}
+    \PYG{n}{compute\PYGZus{}inlet\PYGZus{}velocity}\PYG{p}{(}\PYG{n}{inlet\PYGZus{}points}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}
+\PYG{p}{)}\PYG{p}{)}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{n}{outside\PYGZus{}points} \PYG{o}{=} \PYG{n}{increase\PYGZus{}points\PYGZus{}number}\PYG{p}{(}\PYG{n}{outside\PYGZus{}points}\PYG{p}{,} \PYG{l+m+mi}{8}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{)}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}
+\PYG{n}{outlet\PYGZus{}points}  \PYG{o}{=} \PYG{n}{increase\PYGZus{}points\PYGZus{}number}\PYG{p}{(}\PYG{n}{outlet\PYGZus{}points}\PYG{p}{,} \PYG{l+m+mi}{16}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{)}\PYG{o}{.}\PYG{n}{detach}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{n}{PINNModel} \PYG{o}{=} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Sequential}\PYG{p}{(}
+    \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Linear}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{l+m+mi}{128}\PYG{p}{)}\PYG{p}{,} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Tanh}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+    \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Linear}\PYG{p}{(}\PYG{l+m+mi}{128}\PYG{p}{,} \PYG{l+m+mi}{128}\PYG{p}{)}\PYG{p}{,} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Tanh}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+    \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Linear}\PYG{p}{(}\PYG{l+m+mi}{128}\PYG{p}{,} \PYG{l+m+mi}{128}\PYG{p}{)}\PYG{p}{,} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Tanh}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+    \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Linear}\PYG{p}{(}\PYG{l+m+mi}{128}\PYG{p}{,} \PYG{l+m+mi}{128}\PYG{p}{)}\PYG{p}{,} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Tanh}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+    \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Linear}\PYG{p}{(}\PYG{l+m+mi}{128}\PYG{p}{,} \PYG{l+m+mi}{3}\PYG{p}{)}
+\PYG{p}{)}\PYG{o}{.}\PYG{n}{double}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{initialize\PYGZus{}weights}\PYG{p}{(}\PYG{n}{module}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{if} \PYG{n+nb}{isinstance}\PYG{p}{(}\PYG{n}{module}\PYG{p}{,} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{Linear}\PYG{p}{)}\PYG{p}{:}
+        \PYG{n}{nn}\PYG{o}{.}\PYG{n}{init}\PYG{o}{.}\PYG{n}{xavier\PYGZus{}uniform\PYGZus{}}\PYG{p}{(}\PYG{n}{module}\PYG{o}{.}\PYG{n}{weight}\PYG{p}{,} \PYG{n}{gain}\PYG{o}{=}\PYG{l+m+mf}{1.0}\PYG{p}{)}
+        \PYG{n}{nn}\PYG{o}{.}\PYG{n}{init}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}}\PYG{p}{(}\PYG{n}{module}\PYG{o}{.}\PYG{n}{bias}\PYG{p}{)}
+
+\PYG{n}{PINNModel}\PYG{o}{.}\PYG{n}{apply}\PYG{p}{(}\PYG{n}{initialize\PYGZus{}weights}\PYG{p}{)}
+
+\PYG{n}{mse} \PYG{o}{=} \PYG{n}{nn}\PYG{o}{.}\PYG{n}{MSELoss}\PYG{p}{(}\PYG{p}{)}
+\PYG{n}{losses} \PYG{o}{=} \PYG{p}{[}\PYG{p}{]}
+
+\PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{loss\PYGZus{}function}\PYG{p}{(}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{inside\PYGZus{}values} \PYG{o}{=} \PYG{n}{PINNModel}\PYG{p}{(}\PYG{n}{inside\PYGZus{}points}\PYG{p}{)}
+    \PYG{n}{ns\PYGZus{}x}\PYG{p}{,} \PYG{n}{ns\PYGZus{}y}\PYG{p}{,} \PYG{n}{continuity} \PYG{o}{=} \PYG{n}{ns\PYGZus{}residuals}\PYG{p}{(}\PYG{n}{inside\PYGZus{}points}\PYG{p}{,} \PYG{n}{inside\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{inside\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{,} \PYG{n}{inside\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{,} \PYG{n}{nu}\PYG{p}{)}
+
+    \PYG{n}{ns\PYGZus{}loss} \PYG{o}{=} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{ns\PYGZus{}x}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}like}\PYG{p}{(}\PYG{n}{ns\PYGZus{}x}\PYG{p}{)}\PYG{p}{)} \PYG{o}{+} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{ns\PYGZus{}y}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}like}\PYG{p}{(}\PYG{n}{ns\PYGZus{}y}\PYG{p}{)}\PYG{p}{)}
+    \PYG{n}{cont\PYGZus{}loss} \PYG{o}{=} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{continuity}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}like}\PYG{p}{(}\PYG{n}{continuity}\PYG{p}{)}\PYG{p}{)}
+
+    \PYG{n}{wall\PYGZus{}values} \PYG{o}{=} \PYG{n}{PINNModel}\PYG{p}{(}\PYG{n}{outside\PYGZus{}points}\PYG{p}{)}
+    \PYG{n}{wall\PYGZus{}loss} \PYG{o}{=} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{wall\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}like}\PYG{p}{(}\PYG{n}{wall\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{)}\PYG{p}{)} \PYGZbs{}
+                \PYG{o}{+} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{wall\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}like}\PYG{p}{(}\PYG{n}{wall\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} Inlet}
+    \PYG{n}{inlet\PYGZus{}values} \PYG{o}{=} \PYG{n}{PINNModel}\PYG{p}{(}\PYG{n}{inlet\PYGZus{}points}\PYG{p}{)}
+    \PYG{n}{inlet\PYGZus{}loss} \PYG{o}{=} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{inlet\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{,} \PYG{n}{inlet\PYGZus{}labels}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{0}\PYG{p}{]}\PYG{p}{)} \PYGZbs{}
+                 \PYG{o}{+} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{inlet\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{,} \PYG{n}{inlet\PYGZus{}labels}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{)}
+
+    \PYG{n}{outlet\PYGZus{}values} \PYG{o}{=} \PYG{n}{PINNModel}\PYG{p}{(}\PYG{n}{outlet\PYGZus{}points}\PYG{p}{)}
+    \PYG{n}{outlet\PYGZus{}loss} \PYG{o}{=} \PYG{n}{mse}\PYG{p}{(}\PYG{n}{outlet\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{zeros\PYGZus{}like}\PYG{p}{(}\PYG{n}{outlet\PYGZus{}values}\PYG{p}{[}\PYG{p}{:}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{]}\PYG{p}{)}\PYG{p}{)}
+
+    \PYG{n}{total} \PYG{o}{=} \PYG{p}{(}
+            \PYG{n}{ns\PYGZus{}loss}
+            \PYG{o}{+} \PYG{n}{cont\PYGZus{}loss}
+            \PYG{o}{+} \PYG{l+m+mi}{50} \PYG{o}{*} \PYG{n}{wall\PYGZus{}loss}
+            \PYG{o}{+} \PYG{l+m+mi}{50} \PYG{o}{*} \PYG{n}{inlet\PYGZus{}loss}
+            \PYG{o}{+} \PYG{l+m+mi}{5} \PYG{o}{*} \PYG{n}{outlet\PYGZus{}loss}
+    \PYG{p}{)}
+
+    \PYG{n}{losses}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{p}{[}\PYG{n}{ns\PYGZus{}loss}\PYG{o}{.}\PYG{n}{item}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{cont\PYGZus{}loss}\PYG{o}{.}\PYG{n}{item}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{wall\PYGZus{}loss}\PYG{o}{.}\PYG{n}{item}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+                   \PYG{n}{inlet\PYGZus{}loss}\PYG{o}{.}\PYG{n}{item}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{outlet\PYGZus{}loss}\PYG{o}{.}\PYG{n}{item}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{total}\PYG{o}{.}\PYG{n}{item}\PYG{p}{(}\PYG{p}{)}\PYG{p}{]}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{total}
+
+
+\PYG{n}{lossses} \PYG{o}{=} \PYG{p}{[}\PYG{p}{]}
+
+\PYG{n}{adam\PYGZus{}epochs} \PYG{o}{=} \PYG{l+m+mi}{20000}
+\PYG{n}{lbfgs\PYGZus{}epochs} \PYG{o}{=} \PYG{l+m+mi}{3000}
+
+\PYG{n}{adam\PYGZus{}optimizer} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{optim}\PYG{o}{.}\PYG{n}{Adam}\PYG{p}{(}\PYG{n}{PINNModel}\PYG{o}{.}\PYG{n}{parameters}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{n}{lr}\PYG{o}{=}\PYG{l+m+mf}{0.001}\PYG{p}{)}
+\PYG{n}{scheduler} \PYG{o}{=} \PYG{n}{StepLR}\PYG{p}{(}\PYG{n}{adam\PYGZus{}optimizer}\PYG{p}{,} \PYG{n}{step\PYGZus{}size}\PYG{o}{=}\PYG{l+m+mi}{15000}\PYG{p}{,} \PYG{n}{gamma}\PYG{o}{=}\PYG{l+m+mf}{0.1}\PYG{p}{)}
+
+\PYG{k}{for} \PYG{n}{epoch} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n}{adam\PYGZus{}epochs}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{adam\PYGZus{}optimizer}\PYG{o}{.}\PYG{n}{zero\PYGZus{}grad}\PYG{p}{(}\PYG{p}{)}
+
+    \PYG{n}{total\PYGZus{}loss} \PYG{o}{=} \PYG{n}{loss\PYGZus{}function}\PYG{p}{(}\PYG{p}{)}
+    \PYG{n}{total\PYGZus{}loss}\PYG{o}{.}\PYG{n}{backward}\PYG{p}{(}\PYG{p}{)}
+
+    \PYG{n}{adam\PYGZus{}optimizer}\PYG{o}{.}\PYG{n}{step}\PYG{p}{(}\PYG{p}{)}
+    \PYG{n}{scheduler}\PYG{o}{.}\PYG{n}{step}\PYG{p}{(}\PYG{p}{)}
+
+\PYG{n}{optimizer\PYGZus{}lbfgs} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{optim}\PYG{o}{.}\PYG{n}{LBFGS}\PYG{p}{(}
+    \PYG{n}{PINNModel}\PYG{o}{.}\PYG{n}{parameters}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,}
+    \PYG{n}{lr}\PYG{o}{=}\PYG{l+m+mf}{1.0}\PYG{p}{,}
+    \PYG{n}{max\PYGZus{}iter}\PYG{o}{=}\PYG{l+m+mi}{20}\PYG{p}{,}
+    \PYG{n}{max\PYGZus{}eval}\PYG{o}{=}\PYG{l+m+mi}{25}\PYG{p}{,}
+    \PYG{n}{tolerance\PYGZus{}grad}\PYG{o}{=}\PYG{l+m+mf}{1e\PYGZhy{}7}\PYG{p}{,}
+    \PYG{n}{tolerance\PYGZus{}change}\PYG{o}{=}\PYG{l+m+mf}{1e\PYGZhy{}9}\PYG{p}{,}
+    \PYG{n}{history\PYGZus{}size}\PYG{o}{=}\PYG{l+m+mi}{50}\PYG{p}{,}
+    \PYG{n}{line\PYGZus{}search\PYGZus{}fn}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{strong\PYGZus{}wolfe}\PYG{l+s+s2}{\PYGZdq{}}
+\PYG{p}{)}
+
+\PYG{k}{for} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n}{lbfgs\PYGZus{}epochs}\PYG{p}{)}\PYG{p}{:}
+    \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{closure}\PYG{p}{(}\PYG{p}{)}\PYG{p}{:}
+        \PYG{n}{optimizer\PYGZus{}lbfgs}\PYG{o}{.}\PYG{n}{zero\PYGZus{}grad}\PYG{p}{(}\PYG{p}{)}
+        \PYG{n}{total\PYGZus{}loss} \PYG{o}{=} \PYG{n}{loss\PYGZus{}function}\PYG{p}{(}\PYG{p}{)}
+        \PYG{n}{total\PYGZus{}loss}\PYG{o}{.}\PYG{n}{backward}\PYG{p}{(}\PYG{p}{)}
+
+        \PYG{k}{return} \PYG{n}{total\PYGZus{}loss}
+
+    \PYG{n}{optimizer\PYGZus{}lbfgs}\PYG{o}{.}\PYG{n}{step}\PYG{p}{(}\PYG{n}{closure}\PYG{p}{)}
+
+\PYG{n}{torch}\PYG{o}{.}\PYG{n}{save}\PYG{p}{(}\PYG{n}{PINNModel}\PYG{o}{.}\PYG{n}{state\PYGZus{}dict}\PYG{p}{(}\PYG{p}{)}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{./AN\PYGZus{}model\PYGZus{}01.pt}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+
+\PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{AN\PYGZus{}model\PYGZus{}01.json}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{w}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+    \PYG{n}{json}\PYG{o}{.}\PYG{n}{dump}\PYG{p}{(}\PYG{n}{losses}\PYG{p}{,} \PYG{n}{f}\PYG{p}{)}
+\end{MintedVerbatim}
